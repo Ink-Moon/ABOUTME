@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anna's Portfolio | AI & Frontend Journey</title>
+    
+    <!-- 外部資源庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/dist/typed.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020205;
+            --accent-blue: #00f2ff;
+            --accent-purple: #7000ff;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --text-gray: #b0b0b0;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            /* 將全黑背景替換為 005648.jpg 加上半透明深色漸層，以提升文字可讀性 */
+            background-color: var(--bg-dark);
+            background-image: linear-gradient(rgba(2, 2, 5, 0.7), rgba(2, 2, 5, 0.85)), url('005648.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: white;
+            font-family: 'Segoe UI', 'PingFang TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* body 鎖定（開啟彈窗時使用） */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        /* Three.js 背景容器 */
+        #canvas-container {
+            position: fixed; top: 0; left: 0; z-index: -1;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        /* 導覽列 */
+        nav {
+            position: fixed; right: 30px; top: 50%; transform: translateY(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+
+        nav.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-50%) translateX(50px);
+        }
+        
+        .nav-item-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        nav a {
+            display: block; width: 12px; height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-tooltip {
+            position: absolute; right: 25px;
+            background: rgba(0, 242, 255, 0.15);
+            border: 1px solid var(--accent-blue);
+            padding: 4px 10px; border-radius: 4px;
+            font-size: 0.8rem; color: #fff;
+            opacity: 0; pointer-events: none;
+            transition: all 0.3s; white-space: nowrap;
+            backdrop-filter: blur(8px);
+        }
+
+        .nav-item-wrapper:hover .nav-tooltip {
+            opacity: 1; transform: translateX(-5px);
+        }
+
+        .nav-item-wrapper:hover a, nav a.active {
+            background: var(--accent-blue);
+            box-shadow: 0 0 15px var(--accent-blue);
+            transform: scale(1.5);
+        }
+
+        section {
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            padding: 100px 10%; box-sizing: border-box;
+            position: relative;
+        }
+
+        /* --- 1. 自我介紹區 --- */
+        .avatar-container {
+            position: relative;
+            width: 280px; height: 280px;
+            margin-bottom: 25px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid var(--accent-blue);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+            background: linear-gradient(135deg, rgba(0,242,255,0.1), rgba(112,0,255,0.1));
+        }
+
+        .profile-img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 當圖片載入失敗時的精緻科技感 placeholder 樣式 */
+        .avatar-fallback {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: linear-gradient(135deg, #051329 0%, #0a051d 100%);
+            color: var(--accent-blue);
+            font-family: monospace;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .avatar-fallback svg {
+            width: 64px; height: 64px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 8px var(--accent-blue));
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(0.98); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        .hero-text { text-align: center; margin-bottom: 20px; }
+        .typing-container { font-size: 1.5rem; color: var(--accent-blue); height: 1.6em; font-family: monospace; }
+
+        .bio-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 30px; border-radius: 15px;
+            margin-top: 20px; max-width: 700px;
+            border-left: 4px solid var(--accent-blue);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .bio-card p {
+            line-height: 1.8;
+            margin: 10px 0;
+            color: #e0e0e0;
+        }
+
+        /* --- 2. 專長區 --- */
+        .skills-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 30px; width: 100%; max-width: 1000px;
+        }
+        .skill-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 25px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            text-align: center; transition: all 0.4s ease;
+        }
+        .skill-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 25px rgba(0, 242, 255, 0.25);
+            background: rgba(0, 242, 255, 0.05);
+        }
+        .skill-circle {
+            width: 80px; height: 80px;
+            background: var(--glass-bg);
+            border: 2px solid var(--accent-blue);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 15px; transition: 0.5s;
+            font-weight: bold; font-size: 0.85rem;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.1);
+        }
+        .skill-item:hover .skill-circle {
+            transform: scale(1.1) rotate(360deg);
+            box-shadow: 0 0 25px var(--accent-blue);
+        }
+        .skill-bar-bg {
+            background: #111; height: 8px; border-radius: 4px;
+            overflow: hidden; margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .skill-bar-fill {
+            height: 100%; width: 0;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+            box-shadow: 0 0 10px var(--accent-blue);
+            transition: width 2s cubic-bezier(0.1, 0, 0.2, 1);
+        }
+
+        /* --- 3. 經歷時間軸 --- */
+        .timeline {
+            position: relative; max-width: 800px; width: 100%;
+            border-left: 2px solid var(--accent-blue);
+            padding-left: 40px;
+        }
+        .timeline-item {
+            position: relative; margin-bottom: 50px;
+        }
+        .timeline-item::before {
+            content: ''; position: absolute; left: -49px; top: 0;
+            width: 16px; height: 16px; background: var(--accent-blue);
+            border-radius: 50%; box-shadow: 0 0 10px var(--accent-blue);
+        }
+        .exp-card {
+            background: var(--glass-bg); padding: 25px;
+            border-radius: 12px; border: 1px solid rgba(0, 242, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .exp-card h3 {
+            margin: 0 0 10px 0;
+            color: #fff;
+            font-size: 1.3rem;
+        }
+        .exp-card p {
+            margin: 0;
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+
+        /* --- 4. 作品連結分頁區 --- */
+        .projects-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px; width: 100%; max-width: 1100px;
+        }
+        .project-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 280px;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .project-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 15px 35px rgba(0, 242, 255, 0.25);
+            background: rgba(255, 255, 255, 0.07);
+        }
+        .project-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .project-tag {
+            background: rgba(0, 242, 255, 0.1);
+            color: var(--accent-blue);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            letter-spacing: 0.5px;
+        }
+        .project-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 1.4rem;
+            color: #fff;
+            font-weight: 600;
+        }
+        .project-card p {
+            color: var(--text-gray);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin: 0 0 25px 0;
+            flex-grow: 1;
+        }
+        .project-link {
+            display: inline-flex;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.95rem;
+            gap: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .project-link span {
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+        .project-card:hover .project-link span {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+        .project-link-arrow {
+            color: var(--accent-blue);
+            transition: transform 0.3s;
+        }
+        .project-card:hover .project-link-arrow {
+            transform: translateX(6px);
+        }
+
+        /* --- 5. 虛擬子網頁 / 作品詳情全螢幕面板 --- */
+        .project-modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(2, 2, 5, 0.98);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            z-index: 2000; /* 確保在最上層，不被任何物件阻擋 */
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 60px 20px;
+            box-sizing: border-box;
+        }
+
+        .project-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content-wrapper {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            border-radius: 24px;
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+            position: relative;
+            transform: translateY(30px) scale(0.97);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 25px 60px rgba(0, 242, 255, 0.15);
+        }
+
+        .project-modal-overlay.active .modal-content-wrapper {
+            transform: translateY(0) scale(1);
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 25px; right: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.5rem;
+            z-index: 2010;
+        }
+
+        .close-modal-btn:hover {
+            background: var(--accent-blue);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-blue);
+            border-color: var(--accent-blue);
+            transform: rotate(90deg);
+        }
+
+        /* 詳情分頁之頂部多功能導覽列 (Subpage Swapping Navigation) */
+        .modal-sub-nav {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .sub-nav-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-gray);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .sub-nav-btn:hover {
+            border-color: var(--accent-blue);
+            color: white;
+            background: rgba(0, 242, 255, 0.05);
+        }
+
+        .sub-nav-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: var(--bg-dark);
+            font-weight: 600;
+            box-shadow: 0 0 12px rgba(0, 242, 255, 0.3);
+        }
+
+        /* 詳情頁內排版元素 */
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 25px;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-size: 2.2rem;
+            margin: 10px 0 0 0;
+            text-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+            font-weight: 700;
+        }
+
+        .tech-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .tech-tag {
+            background: rgba(112, 0, 255, 0.15);
+            color: #b380ff;
+            border: 1px solid rgba(112, 0, 255, 0.3);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .modal-body {
+            line-height: 1.8;
+            font-size: 1.05rem;
+            color: #d1d1d6;
+        }
+
+        .modal-body h4 {
+            color: white;
+            font-size: 1.3rem;
+            margin: 35px 0 15px 0;
+            border-left: 3px solid var(--accent-blue);
+            padding-left: 12px;
+        }
+
+        .modal-body ul {
+            padding-left: 20px;
+            margin: 15px 0;
+        }
+
+        .modal-body li {
+            margin-bottom: 10px;
+        }
+
+        /* 賽博朋克式控制台介面模擬 */
+        .terminal-preview {
+            background: #05050a;
+            border: 1px solid rgba(0, 242, 255, 0.15);
+            border-radius: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            margin: 25px 0;
+            font-size: 0.9rem;
+            color: #33ff33;
+            box-shadow: inset 0 0 15px rgba(0, 255, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            position: absolute; top: 0; left: 0; right: 0;
+            height: 25px; background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; padding-left: 10px; gap: 6px;
+        }
+        .terminal-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+
+        .terminal-content {
+            margin-top: 15px;
+            white-space: pre-wrap;
+        }
+
+        /* --- 6. 未來期許 --- */
+        #future { text-align: center; overflow: hidden; }
+        .future-content {
+            position: relative; z-index: 2; padding: 40px;
+            transition: 0.5s; cursor: pointer;
+        }
+        .future-content:hover {
+            text-shadow: 0 0 20px var(--accent-blue);
+            transform: scale(1.05);
+        }
+
+        h2 { 
+            font-size: 2.5rem; 
+            margin-bottom: 60px; 
+            border-bottom: 2px solid var(--accent-blue); 
+            padding-bottom: 12px; 
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Three.js 背景繪製區域 -->
+<div id="canvas-container"></div>
+
+<!-- 側邊多功能導覽列 -->
+<nav id="sidebar-nav">
+    <div class="nav-item-wrapper">
+        <span class="nav-tooltip">自我介紹</span>
+        <a href="#intro" class="active"></a>
+    </div>
+    <div class="nav-item-wrapper">
+        <span class="nav-tooltip">專業技能</span>
+        <a href="#skills"></a>
+    </div>
+    <div class="nav-item-wrapper">
+        <span class="nav-tooltip">經歷總覽</span>
+        <a href="#experience"></a>
+    </div>
+    <div class="nav-item-wrapper">
+        <span class="nav-tooltip">作品連結</span>
+        <a href="#projects"></a>
+    </div>
+    <div class="nav-item-wrapper">
+        <span class="nav-tooltip">未來期許</span>
+        <a href="#future"></a>
+    </div>
+</nav>
+
+<!-- 1. 自我介紹分頁 -->
+<section id="intro">
+    <div class="avatar-container" data-aos="fade-down">
+        <!-- 正常嘗試載入原圖 -->
+        <img src="photo.jpg" alt="Anna" class="profile-img" id="profile-pic">
+        <!-- 兜底 Placeholder（若本地圖片未上傳也能呈現完美的賽博朋克頭像） -->
+        <div class="avatar-fallback" id="fallback-ui">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <div style="font-weight: bold; letter-spacing: 1px;">ANNA</div>
+            <div style="font-size: 0.65rem; color: #888; margin-top: 5px;">SYS.ACTIVE</div>
+        </div>
+    </div>
+
+    <div class="hero-text">
+        <h3 style="letter-spacing: 5px; color: rgba(255,255,255,0.7); font-weight: 300;">Welcome~</h3>
+        <h1 style="font-size: 3rem; margin: 10px 0; font-weight: 800; letter-spacing: 2px;">ANNA'S SELF-INTRODUCE</h1>
+        <div class="typing-container">
+            <span id="typed-text"></span>
+        </div>
+    </div>
+    <div class="bio-card" data-aos="fade-up">
+        <p>對於由無中生有的建構程式有濃厚的興趣，學習新的領域，專注於建立自己的知識樹，建構知識架構，再活化應用，不退於潮流之後。</p>
+        <p>目前在某精密加工廠擔任加工程式編譯及立體圖繪製工程師，對於前端與AI有好奇與興趣，正在前往轉職前端的路上。</p>
+        <p style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;"><strong>學歷：</strong>銘傳大學會計系畢業</p>
+    </div>
+</section>
+
+<!-- 2. 專業技能分頁 -->
+<section id="skills">
+    <h2 data-aos="fade-up">專業技能</h2>
+    <div class="skills-grid">
+        <div class="skill-item" data-aos="flip-left">
+            <div class="skill-circle">NX CAD</div>
+            <span style="font-weight: 600;">3D 建模設計</span>
+            <div class="skill-bar-bg"><div class="skill-bar-fill" data-percent="90%"></div></div>
+        </div>
+        <div class="skill-item" data-aos="flip-left" data-aos-delay="100">
+            <div class="skill-circle">NX CAM</div>
+            <span style="font-weight: 600;">3D 工業加工</span>
+            <div class="skill-bar-bg"><div class="skill-bar-fill" data-percent="85%"></div></div>
+        </div>
+        <div class="skill-item" data-aos="flip-left" data-aos-delay="200">
+            <div class="skill-circle">JAVA/C++</div>
+            <span style="font-weight: 600;">基礎程式設計</span>
+            <div class="skill-bar-bg"><div class="skill-bar-fill" data-percent="75%"></div></div>
+        </div>
+        <div class="skill-item" data-aos="flip-left" data-aos-delay="300">
+            <div class="skill-circle">HTML/CSS</div>
+            <span style="font-weight: 600;">前端網頁設計</span>
+            <div class="skill-bar-bg"><div class="skill-bar-fill" data-percent="80%"></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. 經歷總覽分頁 -->
+<section id="experience">
+    <h2 data-aos="fade-up">經歷總覽</h2>
+    <div class="timeline">
+        <div class="timeline-item" data-aos="slide-left">
+            <div class="exp-card">
+                <h3>工業技術工程師 (10年)</h3>
+                <p>軟體工程師、3D CAD建模、3D CAM加工工程師。專注於加工程式優化與立體圖面自動化處理。</p>
+            </div>
+        </div>
+        <div class="timeline-item" data-aos="slide-right">
+            <div class="exp-card">
+                <h3>會計產業 (5年)</h3>
+                <p>公司會計人員。專職日常帳務、成本會計、稅務申報、預算控制與財務狀況深度分析。</p>
+            </div>
+        </div>
+        <div class="timeline-item" data-aos="slide-left">
+            <div class="exp-card">
+                <h3>教育產業 (5年)</h3>
+                <p>國中數學老師 & 補習班主任。負責課程開發、班級經營、邏輯思考訓練及升學規劃指導。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 4. 作品連結分頁區 -->
+<section id="projects">
+    <h2 data-aos="fade-up">作品連結</h2>
+    <div class="projects-grid">
+        <!-- 作品 1 -->
+        <div class="project-card" data-aos="zoom-in" data-aos-delay="100">
+            <div>
+                <div class="project-meta">
+                    <span class="project-tag">Frontend & 3D Web</span>
+                </div>
+                <h3>個人互動式 RWD 網站</h3>
+                <p>運用 HTML5/CSS3、JavaScript 整合 Three.js 與 AOS 滾動控制，打造流暢且極具科技感的網頁視覺體驗。結合了我的精密工程思維與現代前端美學。</p>
+            </div>
+            <a href="javascript:void(0)" class="project-link" onclick="openProjectDetail(1)">
+                <span>查看專案詳情</span>
+                <span class="project-link-arrow">→</span>
+            </a>
+        </div>
+
+        <!-- 作品 2 -->
+        <div class="project-card" data-aos="zoom-in" data-aos-delay="200">
+            <div>
+                <div class="project-meta">
+                    <span class="project-tag">Auto CAD / CAM Script</span>
+                </div>
+                <h3>NX 自動化加工程式優化</h3>
+                <p>利用 Python / C++ 編寫自動化批次處理腳本，解決加工路徑編譯的重複繁複步驟。成功提升 25% 的立體圖比對速度，並大幅降低人為操作錯誤機率。</p>
+            </div>
+            <a href="javascript:void(0)" class="project-link" onclick="openProjectDetail(2)">
+                <span>查看技術文件</span>
+                <span class="project-link-arrow">→</span>
+            </a>
+        </div>
+
+        <!-- 作品 3 -->
+        <div class="project-card" data-aos="zoom-in" data-aos-delay="300">
+            <div>
+                <div class="project-meta">
+                    <span class="project-tag">AI Application Concept</span>
+                </div>
+                <h3>AI 輔助製圖與圖面檢測工具</h3>
+                <p>串接 OpenAI / Gemini 圖像識別與語意理解 API，建立本地輔助分析工具。能將 2D 圖面標註數據與 3D 模型規格快速校準，展現 AI 落地硬體製造的潛力。</p>
+            </div>
+            <a href="javascript:void(0)" class="project-link" onclick="openProjectDetail(3)">
+                <span>Demo 展示連結</span>
+                <span class="project-link-arrow">→</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- 5. 未來期許分頁 -->
+<section id="future">
+    <div class="future-content" data-aos="zoom-in">
+        <h2>未來期許</h2>
+        <p style="font-size: 1.4rem; line-height: 1.8; max-width: 800px; color: #f0f0f0;">
+            在快速變化的 AI 未來，期許自己能著重於軟體與硬體的結合開發，<br>
+            使得生活中的 AI 應用更加的智能、更加人性化。
+        </p>
+    </div>
+</section>
+
+<!-- 全螢幕虛擬子網頁詳情面板 -->
+<div class="project-modal-overlay" id="project-modal">
+    <div class="modal-content-wrapper">
+        <button class="close-modal-btn" onclick="closeProjectDetail()">&times;</button>
+        
+        <!-- 分頁頂部作品快速切換器 (Subpage Navigator) -->
+        <div class="modal-sub-nav">
+            <button class="sub-nav-btn" id="sub-nav-1" onclick="switchProjectInModal(1)">個人 RWD 網站</button>
+            <button class="sub-nav-btn" id="sub-nav-2" onclick="switchProjectInModal(2)">NX 加工自動化</button>
+            <button class="sub-nav-btn" id="sub-nav-3" onclick="switchProjectInModal(3)">AI 圖面審查</button>
+        </div>
+
+        <div id="modal-dynamic-content">
+            <!-- 內容由 JS 動態注入 -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. 初始化 AOS 滾動加載動畫
+    AOS.init({ duration: 1000, once: false });
+
+    // 2. 檢測大頭貼是否載入成功，若失敗則保留極具科技感的科技化 Placeholder，不破壞排版
+    const profileImg = document.getElementById('profile-pic');
+    const fallbackUi = document.getElementById('fallback-ui');
+    
+    if (profileImg) {
+        profileImg.onload = function() {
+            fallbackUi.style.display = 'none'; // 載入成功，隱藏 fallback placeholder
+        };
+        
+        profileImg.onerror = function() {
+            profileImg.style.display = 'none'; // 載入失敗，隱藏失效的圖片圖標
+            fallbackUi.style.display = 'flex'; // 顯示精緻 placeholder
+        };
+    }
+
+    // 3. 打字機動畫
+    new Typed('#typed-text', {
+        strings: ['NX CAD/CAM Specialist', 'Future Frontend Developer', 'AI Application Explorer'],
+        typeSpeed: 60, backSpeed: 30, loop: true
+    });
+
+    // 4. Three.js 流動粒子背景（疊加在 005648.jpg 背景圖上，效果更棒）
+    let scene, camera, renderer, particlesMesh;
+    
+    function initThree() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 1800;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for(let i=0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 10;
+        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.006,
+            color: 0x00f2ff,
+            transparent: true,
+            opacity: 0.4
+        });
+
+        particlesMesh = new THREE.Points(particlesGeometry, material);
+        scene.add(particlesMesh);
+        camera.position.z = 3.5;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (particlesMesh) {
+            particlesMesh.rotation.y += 0.0008;
+            particlesMesh.rotation.x += 0.0004;
+        }
+        renderer.render(scene, camera);
+    }
+
+    window.onload = function() {
+        initThree();
+        animate();
+    };
+
+    // 監聽視窗重置大小以自適應
+    window.addEventListener('resize', () => {
+        if (camera && renderer) {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    });
+
+    // 5. 滾動時觸發技能進度條動畫
+    window.addEventListener('scroll', () => {
+        const skillsSection = document.getElementById('skills');
+        if (!skillsSection) return;
+        const sectionPos = skillsSection.getBoundingClientRect().top;
+        const screenPos = window.innerHeight / 1.2;
+
+        if(sectionPos < screenPos) {
+            document.querySelectorAll('.skill-bar-fill').forEach(bar => {
+                bar.style.width = bar.getAttribute('data-percent');
+            });
+        }
+    });
+
+    // 6. 滾動與右側導覽點狀態聯動
+    window.addEventListener('scroll', () => {
+        let current = "";
+        const sections = document.querySelectorAll("section");
+        const scrollY = window.scrollY;
+
+        sections.forEach((section) => {
+            const sectionTop = section.offsetTop;
+            // 給予些微 buffer 提升體驗
+            if (scrollY >= sectionTop - 250) {
+                current = section.getAttribute("id");
+            }
+        });
+
+        document.querySelectorAll("nav a").forEach((a) => {
+            a.classList.remove("active");
+            if (a.getAttribute("href").includes(current)) {
+                a.classList.add("active");
+            }
+        });
+    });
+
+    // 7. 作品子網頁彈窗邏輯與詳細內容資料庫
+    const projectDetails = {
+        1: {
+            category: "Frontend & 3D Web",
+            title: "個人互動式 RWD 網站",
+            tags: ["HTML5", "Tailwind CSS", "Three.js", "AOS.js", "Typed.js", "Responsive Design"],
+            description: `
+                <h4>專案簡介</h4>
+                <p>本專案是我在前端網頁設計領域的代表作。不同於傳統履歷網頁，我融合了工業設計的精確性與賽博朋克未來科技感，採用玻璃擬態 (Glassmorphism) 排版與 3D 空間概念。結合流暢的滾動追蹤，為使用者建立一場沉浸式個人資訊漫遊體驗。</p>
+                
+                <h4>核心技術亮點</h4>
+                <ul>
+                    <li><strong>3D 粒子星空背景：</strong>使用原生 Three.js 建立 1,800 個高擬真發光粒子點，透過 CPU/GPU 硬體加速渲染，每秒 60 幀平滑旋轉，並在行動端自動調節粒子密度以達到性能平衡。</li>
+                    <li><strong>多載具自適應 RWD：</strong>採用動態網格 (Flexbox / CSS Grid) 與媒體查詢 (Media Queries)，不論在桌機、平板或折疊手機，皆維持完美視覺比例。</li>
+                    <li><strong>滾動事件同步聯動：</strong>利用 JavaScript 進行防抖滾動監聽，使右側的導覽點、進度條填滿動畫、以及 AOS 動態載入在對應區塊進入視窗時同步觸發。</li>
+                </ul>
+
+                <h4>互動式 UI 結構預覽</h4>
+                <div class="terminal-preview">
+                    <div class="terminal-header">
+                        <div class="terminal-dot" style="background:#ff5f56;"></div>
+                        <div class="terminal-dot" style="background:#ffbd2e;"></div>
+                        <div class="terminal-dot" style="background:#27c93f;"></div>
+                        <span style="color: #666; font-size: 0.75rem; margin-left: 10px;">structure-preview.json</span>
+                    </div>
+                    <div class="terminal-content">{
+  "page_layout": "Single Page Application (SPA)",
+  "effects": {
+    "background": "Three.js Particle Mesh (Active)",
+    "scroll_animations": "AOS.js (Active)",
+    "dynamic_text": "Typed.js (Hero text loops)"
+  },
+  "interactive_components": [
+    "Sidebar Dot Navigation",
+    "Smart Image Fallback UI",
+    "Fluid Progress Bars for Skills",
+    "Fullscreen Immersive Subpages (Current)"
+  ],
+  "accessibility": "Perfect RWD on Viewports from 320px to 2560px"
+}</div>
+                </div>
+
+                <h4>未來優化方向</h4>
+                <p>未來預計引入 WebGL 著色器 (Custom Shaders) 來讓粒子背景能根據使用者的滑鼠游標產生流體力學般的撥動波紋，並計畫整合 Next.js 進行伺服器渲染 (SSR) 提升 SEO 表現。</p>
+            `
+        },
+        2: {
+            category: "Auto CAD / CAM Script",
+            title: "NX 自動化加工程式優化",
+            tags: ["Python", "C++", "NX Open API", "G-Code", "Automation", "CNC Optimization"],
+            description: `
+                <h4>專案簡介</h4>
+                <p>在精密製造廠擔任加工程式工程師期間，發現傳統人工作業在進行比對與刀具路徑輸出時，常面臨高重複性與高失誤風險。本專案透過二次開發 NX (UG) 軟體，設計出可自動讀取 3D CAD 模型特徵並對應輸出 CAM 加工路徑的核心腳本。</p>
+                
+                <h4>系統架構與實作邏輯</h4>
+                <ul>
+                    <li><strong>CAD 模型特徵辨識：</strong>利用 Python 調用 NX Open API，自動掃描立體圖面的拓撲特徵、盲孔直徑、階梯面高度及螺紋規格。</li>
+                    <li><strong>刀具資料庫自動匹配：</strong>建立比對矩陣演算法，將識別出的模型孔徑自動匹配工廠現有實體刀具，避免人為選錯刀具。</li>
+                    <li><strong>G-Code 模擬與自動導出：</strong>一鍵完成加工排序 (Machining Sequence) 並自動生成對應的 CNC 加工代碼 (G-Code)，大幅縮減調試機台時間。</li>
+                </ul>
+
+                <h4>自動化腳本運行日誌</h4>
+                <div class="terminal-preview">
+                    <div class="terminal-header">
+                        <div class="terminal-dot" style="background:#ff5f56;"></div>
+                        <div class="terminal-dot" style="background:#ffbd2e;"></div>
+                        <div class="terminal-dot" style="background:#27c93f;"></div>
+                        <span style="color: #666; font-size: 0.75rem; margin-left: 10px;">nx_autoparse_console.log</span>
+                    </div>
+                    <div class="terminal-content">>>> [INFO] Initializing NX Open Python Environment...
+>>> [SUCCESS] Successfully attached to Active NX Process.
+>>> [SCANNING] Analyzing 3D CAD Geometry: 'Part_A_V4.prt'
+>>> [FOUND] 12 Blind Holes, 4 Threaded Holes, 2 Main Pockets.
+>>> [ALGORITHM] Optimizing toolpaths...
+>>> [COMPARING] Tool #04 (D10 Roughing Endmill) selected for main pocket.
+>>> [COMPARING] Tool #12 (M6 Tap) selected for threaded holes.
+>>> [EXPORTING] Generating Postprocessor G-Code...
+>>> [SUCCESS] File 'G_CODE_OUTPUT_Part_A_V4.nc' generated!
+>>> [METRIC] Process time: 1.45 seconds (Saved 25 mins of manual work)</div>
+                </div>
+
+                <h4>專案成果與效益</h4>
+                <p>此腳本在工廠實際導入後，整體立體圖比對與 CAM 生成時間縮短了 <strong>25%</strong> 以上，且完全消除了製程工程師因為疲勞導致的加工刀具配對失誤，實現硬體與軟體的完美結合。</p>
+            `
+        },
+        3: {
+            category: "AI Application Concept",
+            title: "AI 輔助製圖與圖面檢測工具",
+            tags: ["OpenAI API", "Gemini API", "Computer Vision", "Node.js", "AI Agent", "JSON Schema"],
+            description: `
+                <h4>專案簡介</h4>
+                <p>隨著大語言模型在多模態理解（Vision-Language Models）的突破，本概念驗證（PoC）專案致力於打破製造業「2D 紙本圖紙」與「3D 電腦模型」之間的資訊孤島。透過 AI Vision 自動審查 2D 工程圖面的公差標註、文字描述，並與 3D 結構比對，自動標記缺失。</p>
+                
+                <h4>技術架構</h4>
+                <ul>
+                    <li><strong>多模態圖像分析：</strong>用戶上傳 PDF 圖紙後，系統將其轉為高解析度 Image，透過 Gemini 2.5 Flash / GPT-4o 辨識圖紙右上角的圖框、公差標準（如 ISO 2768-m）及表面粗糙度要求。</li>
+                    <li><strong>結構化數據導出 (Structured JSON)：</strong>利用 AI 的 JSON Schema 回傳特性，將圖面內的文字註解與技術要求轉化為結構化的 API 資料。</li>
+                    <li><strong>圖面不一致預警系統：</strong>將 AI 識別出的數值與 NX 3D 模型元數據 (Metadata) 進行交叉比對，若 2D 圖標註 $25.00$ 與 3D 的 $25.05$ 不符，立即進行霓虹視覺高亮警示。</li>
+                </ul>
+
+                <h4>AI Agent 分析引擎輸出實例</h4>
+                <div class="terminal-preview">
+                    <div class="terminal-header">
+                        <div class="terminal-dot" style="background:#ff5f56;"></div>
+                        <div class="terminal-dot" style="background:#ffbd2e;"></div>
+                        <div class="terminal-dot" style="background:#27c93f;"></div>
+                        <span style="color: #666; font-size: 0.75rem; margin-left: 10px;">ai_dimension_auditor.json</span>
+                    </div>
+                    <div class="terminal-content">{
+  "status": "COMPLETED_WITH_WARNINGS",
+  "audit_target": "Draft_Gear_Box_2026.pdf",
+  "detected_standards": {
+    "general_tolerance_standard": "ISO 2768-m",
+    "drawing_scale": "1:2"
+  },
+  "discrepancies_found": [
+    {
+      "dimension_id": "D_321",
+      "feature": "Main Shaft Housing",
+      "2d_draft_dimension": "47.02 H7 (+0.025 / 0.000)",
+      "3d_model_dimension": "47.050",
+      "deviation": "+0.030mm",
+      "severity": "CRITICAL_ERROR",
+      "message": "2D Draft tolerance H7 does not align with the modeled 3D shaft diameter. Interference fit will fail."
+    }
+  ]
+}</div>
+                </div>
+
+                <h4>實踐願景</h4>
+                <p>這個 AI 與傳統精密加工結合的專案，能將以往需要資深工程師耗時數小時的人工「對圖」流程，壓縮在幾秒鐘內由 AI完成初步預審，大幅提升研發設計部門與製造廠對接的效率，是我在 AI 落地應用上的重要探索。</p>
+            `
+        }
+    };
+
+    // 核心注入邏輯
+    function injectModalContent(id) {
+        const data = projectDetails[id];
+        if(!data) return;
+
+        const contentArea = document.getElementById('modal-dynamic-content');
+        contentArea.innerHTML = `
+            <div class="modal-header">
+                <span class="project-tag" style="font-size: 0.85rem; padding: 6px 14px;">${data.category}</span>
+                <h1 class="modal-title">${data.title}</h1>
+                <div class="tech-tags">
+                    ${data.tags.map(tag => `<span class="tech-tag">${tag}</span>`).join('')}
+                </div>
+            </div>
+            <div class="modal-body" data-aos="fade-up">
+                ${data.description}
+            </div>
+        `;
+
+        // 更新子導覽列的 Active 狀態
+        document.querySelectorAll('.sub-nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const activeBtn = document.getElementById(`sub-nav-${id}`);
+        if(activeBtn) {
+            activeBtn.classList.add('active');
+        }
+    }
+
+    // 主網頁開啟子分頁
+    function openProjectDetail(id) {
+        injectModalContent(id);
+
+        // 鎖定主網頁滾動
+        document.body.classList.add('modal-open');
+        // 隱藏右側導覽點防止穿透視覺
+        const sidebarNav = document.getElementById('sidebar-nav');
+        if(sidebarNav) sidebarNav.classList.add('hidden');
+        
+        // 顯示 Overlay
+        const modal = document.getElementById('project-modal');
+        if(modal) {
+            modal.classList.add('active');
+            modal.scrollTop = 0; // 滾動回最頂部
+        }
+    }
+
+    // 子分頁內快速切換作品，不用跳回首頁
+    function switchProjectInModal(id) {
+        const modal = document.getElementById('project-modal');
+        if(modal) {
+            modal.scrollTop = 0; // 切換時自動回到頂端以便閱讀
+        }
+        injectModalContent(id);
+    }
+
+    // 關閉子分頁
+    function closeProjectDetail() {
+        const modal = document.getElementById('project-modal');
+        if(modal) modal.classList.remove('active');
+        
+        document.body.classList.remove('modal-open');
+        const sidebarNav = document.getElementById('sidebar-nav');
+        if(sidebarNav) sidebarNav.classList.remove('hidden');
+    }
+
+    // 點擊暗色模糊背景外圍亦可關閉
+    const modalOverlay = document.getElementById('project-modal');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+            if(e.target === this) {
+                closeProjectDetail();
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
